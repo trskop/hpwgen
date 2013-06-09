@@ -1,0 +1,66 @@
+name:           hpwgen
+version:        0.1.0.0
+-- synopsis:
+-- description:
+license:        BSD3
+license-file:   LICENSE
+author:         Peter Trsko
+maintainer:     peter.trsko@gmail.com
+-- copyright:
+category:       Text
+build-type:     Simple
+cabal-version:  >=1.8
+
+-- data-files:
+extra-source-files:
+    README.md
+
+flag pedantic
+  description:
+    Pass additional flags, including -Werror, to GHC during compilation.
+  default: False
+
+flag with-bytestring
+  description: Compile with ByteString support.
+  default: True
+
+flag with-text
+  description: Compile with Text support.
+  default: True
+
+library
+  hs-source-dirs:       src
+  exposed-modules:
+      Text.Pwgen
+    , Text.Pwgen.Common
+    , Text.Pwgen.FromAscii
+  -- other-modules:
+  build-depends:        base == 4.*
+  if flag(with-bytestring)
+    exposed-modules:    Text.Pwgen.FromAscii.ByteString
+    build-depends:      bytestring
+  if flag(with-text)
+    exposed-modules:    Text.Pwgen.FromAscii.Text
+    build-depends:      text
+  ghc-options:          -Wall
+  if impl(ghc >= 6.8)
+    ghc-options:        -fwarn-tabs
+  if flag(pedantic)
+    ghc-options:        -Werror
+
+executable hpwgen
+  hs-source-dirs:       src
+  main-is:              main.hs
+  other-modules:
+      Text.Pwgen
+    , Text.Pwgen.Common
+    , Text.Pwgen.FromAscii
+  build-depends:
+      base == 4.*
+    , MonadRandom
+    , terminal-size == 0.2.*
+  ghc-options:          -Wall
+  if impl(ghc >= 6.8)
+    ghc-options:        -fwarn-tabs
+  if flag(pedantic)
+    ghc-options:        -Werror
