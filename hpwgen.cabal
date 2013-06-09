@@ -1,12 +1,16 @@
 name:           hpwgen
 version:        0.1.0.0
--- synopsis:
--- description:
+synopsis:       Library and command line tool for generating random passwords.
+description:
+  Library and command line tool for generating random passwords. Library API is
+  very generic allowing to use arbitrary string/text and pseudo random number
+  generator implementation.
+homepage:       https://github.com/trskop/hpwgen
 license:        BSD3
 license-file:   LICENSE
 author:         Peter Trsko
 maintainer:     peter.trsko@gmail.com
--- copyright:
+copyright:      (c) 2013 Peter Trško
 category:       Text
 build-type:     Simple
 cabal-version:  >=1.8
