@@ -181,11 +181,17 @@ alternatingConfigThreeState (in1, len1) (in2, len2) (<>) elem' (!) e cons =
         , genPwOutCond = const True
         }
 
+-- | Generate random password based on algorithm described in configuration
+-- and using specified random number generator.
 genPassword
     :: Monad m
     => GenPasswordConfig s t u a
+    -- ^ Configuration that describes details of password generation algorithm.
     -> (Word8 -> m Word8)
+    -- ^ Generate random value between 0 (zero) and specified upper bound
+    -- (including).
     -> Word8
+    -- ^ Length of password to be generated.
     -> m u
 genPassword cfg genRand pwLength
   | pwLength == 0 = return empty
