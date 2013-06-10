@@ -61,7 +61,7 @@ executable hpwgen
     , Text.Pwgen.FromAscii
   build-depends:
       base == 4.*
-    , MonadRandom
+    , MonadRandom == 0.1.*
     , terminal-size == 0.2.*
   ghc-options:          -Wall
   if impl(ghc >= 6.8)
