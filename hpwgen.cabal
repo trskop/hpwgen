@@ -62,9 +62,14 @@ executable hpwgen
       Text.Pwgen
     , Text.Pwgen.Common
     , Text.Pwgen.FromAscii
+    , Text.Pwgen.FromAscii.ByteString
+  if flag(with-text)
+    exposed-modules:    Text.Pwgen.FromAscii.Text
+    build-depends:      text
   build-depends:
       base == 4.*
 
+    , bytestring
     , MonadRandom == 0.1.*
     , not-found >= 0.6
     , terminal-size == 0.2.*
