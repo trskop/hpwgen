@@ -25,11 +25,14 @@ class FromAscii a where
 
 instance FromAscii Char where
     fromAscii = chr . fromIntegral
+    {-# INLINE fromAscii #-}
 
 -- | Implemented as identity.
 instance FromAscii Word8 where
     fromAscii = id
+    {-# INLINE fromAscii #-}
 
 -- | Constructs a singleton instance of list.
 instance FromAscii a => FromAscii [a] where
     fromAscii = (: []) . fromAscii
+    {-# INLINE fromAscii #-}

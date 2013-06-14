@@ -32,11 +32,14 @@ import Text.Pwgen.FromAscii (FromAscii(..))
 
 instance FromAscii BS.ByteString where
     fromAscii = BS.singleton
+    {-# INLINE fromAscii #-}
 
 instance FromAscii LBS.ByteString where
     fromAscii = LBS.singleton
+    {-# INLINE fromAscii #-}
 
 #if MIN_VERSION_bytestring(0, 10, 0)
 instance FromAscii BS.Builder where
     fromAscii = BS.word8
+    {-# INLINE fromAscii #-}
 #endif
