@@ -22,7 +22,7 @@ import qualified Data.Text.Lazy as LazyText (Text, singleton)
 import qualified Data.Text.Lazy.Builder as TextBuilder (Builder, singleton)
 #endif
 
-import Text.Pwgen.FromAscii (FromAscii(..))
+import Text.Pwgen.FromAscii.Class (FromAscii(..))
 
 
 instance FromAscii Text.Text where

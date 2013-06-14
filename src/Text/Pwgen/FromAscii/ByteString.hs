@@ -27,7 +27,7 @@ import qualified Data.ByteString.Lazy.Builder as BS (Builder, word8)
 #endif
 #endif
 
-import Text.Pwgen.FromAscii (FromAscii(..))
+import Text.Pwgen.FromAscii.Class (FromAscii(..))
 
 
 instance FromAscii BS.ByteString where

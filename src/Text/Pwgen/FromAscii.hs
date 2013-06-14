@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Class for constructing characters from ASCI values.
@@ -5,34 +6,23 @@
 -- License:      BSD3
 --
 -- Maintainer:   peter.trsko@gmail.com
--- Stability:    experimental
--- Portability:  portable
+-- Stability:    stable
+-- Portability:  non-portable (CPP)
 --
 -- Class for constructing characters from ASCI values. This allows to abstract
 -- from actual character implementation and as a consequence it also doesn't
 -- dictate any string\/text implementation.
+--
+-- This module reexports 'FromAscii' class defined in
+-- "Text.Pwgen.FromAscii.Class" along with @ByteString@ and @Text@ if compiled
+-- with @ByteString@ and @Text@ support.
 module Text.Pwgen.FromAscii (FromAscii(..))
     where
 
-import Data.Char (chr)
-import Data.Word (Word8)
-
-
--- | Class of things that can be constructed from ASCI value of characters.
-class FromAscii a where
-    -- | Construct character/sequence from ASCI value.
-    fromAscii :: Word8 -> a
-
-instance FromAscii Char where
-    fromAscii = chr . fromIntegral
-    {-# INLINE fromAscii #-}
-
--- | Implemented as identity.
-instance FromAscii Word8 where
-    fromAscii = id
-    {-# INLINE fromAscii #-}
-
--- | Constructs a singleton instance of list.
-instance FromAscii a => FromAscii [a] where
-    fromAscii = (: []) . fromAscii
-    {-# INLINE fromAscii #-}
+import Text.Pwgen.FromAscii.Class (FromAscii(..))
+#ifdef MIN_VERSION_bytestring
+import Text.Pwgen.FromAscii.ByteString ()
+#endif
+#ifdef MIN_VERSION_text
+import Text.Pwgen.FromAscii.Text ()
+#endif
