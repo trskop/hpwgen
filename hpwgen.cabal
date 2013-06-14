@@ -38,8 +38,11 @@ library
       Text.Pwgen
     , Text.Pwgen.Common
     , Text.Pwgen.FromAscii
+    , Text.Pwgen.FromAscii.Class
   -- other-modules:
-  build-depends:        base == 4.*
+  build-depends:
+      base == 4.*
+    , not-found >= 0.6
   if flag(with-bytestring)
     exposed-modules:    Text.Pwgen.FromAscii.ByteString
     build-depends:      bytestring
@@ -61,7 +64,9 @@ executable hpwgen
     , Text.Pwgen.FromAscii
   build-depends:
       base == 4.*
+
     , MonadRandom == 0.1.*
+    , not-found >= 0.6
     , terminal-size == 0.2.*
   ghc-options:          -Wall
   if impl(ghc >= 6.8)
