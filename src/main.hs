@@ -16,7 +16,7 @@ import Control.Applicative ((<$>))
 import Control.Monad (replicateM)
 import Data.Char (isDigit)
 import Data.Maybe (fromMaybe)
-import Data.Word (Word8)
+import Data.Word (Word32)
 import System.Environment (getArgs)
 
 import Control.Monad.Random (evalRandIO, getRandomR)
@@ -78,7 +78,7 @@ configPronounceable = alternatingConfigThreeState
     xs ! n = let x = xs !! fromIntegral n in (x, length' x)
 
 -- | Default length of password.
-defaultPwlen :: Word8
+defaultPwlen :: Word32
 defaultPwlen = 8
 
 -- | Default number of lines.
@@ -146,7 +146,7 @@ main = do
             $ genPassword configPronounceable (getRandomR . (,) 0) pwlen
     evalRandIO pron >>= printPasswords (fromMaybe 1 cols)
   where
-    processArgs :: [String] -> (Word8, Maybe Int)
+    processArgs :: [String] -> (Word32, Maybe Int)
     processArgs []        = (defaultPwlen, Nothing)
     processArgs [x]       = (readNum x, Nothing)
     processArgs (x1:x2:_) = (readNum x1, Just $ readNum x2)

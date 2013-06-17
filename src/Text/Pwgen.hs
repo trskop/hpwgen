@@ -38,7 +38,7 @@ module Text.Pwgen
     where
 
 import Control.Monad (liftM)
-import Data.Word (Word8)
+import Data.Word (Word32)
 
 import Text.Pwgen.FromAscii
 import Text.Pwgen.Common
@@ -47,15 +47,15 @@ import Text.Pwgen.Common
 -- | Configuration for 'genPassword' function, it actually encodes core
 -- parts of the algorithm, while 'genPassword' provides the plubing.
 data GenPasswordConfig s t u a = GenPasswordConfig
-    { genPwInIndex :: t -> (s, Word8) -> (a, Word8)
+    { genPwInIndex :: t -> (s, Word32) -> (a, Word32)
     -- ^ Selection function, it takes input alphabet, current state, randomly
     -- generated index and produces pair of selected value and its length.
-    , genPwInMaxIndex :: s -> t -> Word8
+    , genPwInMaxIndex :: s -> t -> Word32
     -- ^ Get upper bound on index value for input alphabet. Indexing starts
     -- from 0 (zero).
     , genPwIn :: t
     -- ^ Alphabet\/input that characters\/substrings are selected from.
-    , genPwStateTransformation :: s -> t -> (a, Word8) -> (u, Word8) -> Maybe s
+    , genPwStateTransformation :: s -> t -> (a, Word32) -> (u, Word32) -> Maybe s
     -- ^ State transformation occurs right after new random index was generated
     -- and element from input alphabet was selected, but before this element is
     -- concanetaed to previously generated sequence.
@@ -91,9 +91,9 @@ data GenPasswordConfig s t u a = GenPasswordConfig
 mkConfig
     :: s
     -- ^ Initial value of state.
-    -> (t, Word8)
+    -> (t, Word32)
     -- ^ Alphabet/input that characters/substrings are selected from.
-    -> (t -> (s, Word8) -> (a, Word8))
+    -> (t -> (s, Word32) -> (a, Word32))
     -- ^ Selection function, it takes input alphabet, current state, randomly
     -- generated index and produces pair of selected value and its length.
     -> u
@@ -113,7 +113,7 @@ mkConfig initialState (input, inLen) (!) e cons = GenPasswordConfig
     }
 
 simpleConfig
-    :: ([Char], Word8)
+    :: ([Char], Word32)
     -- ^ Input alphabet and its length.
     -> GenPasswordConfig () String String Char
 simpleConfig input = mkConfig
@@ -126,9 +126,9 @@ simpleConfig input = mkConfig
     l ! (_, n) = (l !! fromIntegral n, 1)
 
 alternatingConfig
-    :: (t, Word8)
-    -> (t, Word8)
-    -> (t -> Word8 -> (a, Word8))
+    :: (t, Word32)
+    -> (t, Word32)
+    -> (t -> Word32 -> (a, Word32))
     -> u
     -> (a -> u -> u)
     -> GenPasswordConfig Bool (t, t) u a
@@ -149,11 +149,11 @@ alternatingConfig (input1, len1) (input2, len2) (!) e cons =
         }
 
 alternatingConfigThreeState
-    :: (t, Word8)
-    -> (t, Word8)
+    :: (t, Word32)
+    -> (t, Word32)
     -> (t -> t -> t)
     -> (a -> t -> Bool)
-    -> (t -> Word8 -> (a, Word8))
+    -> (t -> Word32 -> (a, Word32))
     -> u
     -> (a -> u -> u)
     -> GenPasswordConfig (Maybe Bool) (t, t) u a
@@ -187,10 +187,10 @@ genPassword
     :: Monad m
     => GenPasswordConfig s t u a
     -- ^ Configuration that describes details of password generation algorithm.
-    -> (Word8 -> m Word8)
+    -> (Word32 -> m Word32)
     -- ^ Generate random value between 0 (zero) and specified upper bound
     -- (including).
-    -> Word8
+    -> Word32
     -- ^ Length of password to be generated.
     -> m u
 genPassword cfg genRand pwLength
