@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE Rank2Types #-}
 -- |
 -- Module:       $HEADER$
 -- Description:  Generic code for generating passwords
@@ -6,7 +8,7 @@
 --
 -- Maintainer:   peter.trsko@gmail.com
 -- Stability:    experimental
--- Portability:  portable
+-- Portability:  non-portable (CPP, Rank2Types)
 --
 -- Generic code for generating passwords. It doesn't rely on specific random
 -- number generator or specific string\/text implementation.
@@ -37,7 +39,7 @@ module Text.Pwgen
     )
     where
 
-import Control.Monad (liftM)
+import Control.Applicative (Applicative, (<$>))
 import Data.Word (Word32)
 
 import Text.Pwgen.FromAscii
@@ -55,7 +57,10 @@ data GenPasswordConfig s t u a = GenPasswordConfig
     -- from 0 (zero).
     , genPwIn :: t
     -- ^ Alphabet\/input that characters\/substrings are selected from.
-    , genPwStateTransformation :: s -> t -> (a, Word32) -> (u, Word32) -> Maybe s
+    , genPwStateTransformation
+        :: (Applicative m, Functor m, Monad m)
+        => (Word32 -> m Word32) -> s -> t -> (a, Word32) -> (u, Word32)
+        -> m (Maybe s)
     -- ^ State transformation occurs right after new random index was generated
     -- and element from input alphabet was selected, but before this element is
     -- concanetaed to previously generated sequence.
@@ -70,7 +75,7 @@ data GenPasswordConfig s t u a = GenPasswordConfig
     -- ^ Empty output value.
     , genPwOutCons :: a -> u -> u
     -- ^ Cons function that puts new randomly selected value in to output.
-    , genPwOutCond :: u -> Bool
+    , genPwOutCond :: s -> u -> Bool
     -- ^ Output condition, if 'False' then whole generated password is
     -- discarded and new value is generated. If set to @'const' 'False'@
     -- then 'genPassword' ends up in infinite loop.
@@ -82,11 +87,11 @@ data GenPasswordConfig s t u a = GenPasswordConfig
 -- >     { genPwInIndex = (!)
 -- >     , genPwInMaxIndex = \ _ _ -> inLen - 1
 -- >     , genPwIn = input
--- >     , genPwStateTransformation = \ s _ _ _ -> Just s
+-- >     , genPwStateTransformation = \ _ s _ _ _ -> return $ Just s
 -- >     , genPwInitialState = initialState
 -- >     , genPwOutEmpty = e
 -- >     , genPwOutCons = cons
--- >     , genPwOutCond = const True
+-- >     , genPwOutCond = \ _ _ -> True
 -- >     }
 mkConfig
     :: s
@@ -105,11 +110,11 @@ mkConfig initialState (input, inLen) (!) e cons = GenPasswordConfig
     { genPwInIndex = (!)
     , genPwInMaxIndex = \ _ _ -> inLen - 1 -- Indexing starts from zero.
     , genPwIn = input
-    , genPwStateTransformation = \ s _ _ _ -> Just s
+    , genPwStateTransformation = \ _ s _ _ _ -> return $ Just s
     , genPwInitialState = initialState
     , genPwOutEmpty = e
     , genPwOutCons = cons
-    , genPwOutCond = const True -- Any sequence is accepted.
+    , genPwOutCond = \ _ _ -> True -- Any sequence is accepted.
     }
 
 simpleConfig
@@ -141,11 +146,11 @@ alternatingConfig (input1, len1) (input2, len2) (!) e cons =
             False -> len1 - 1
             True -> len2 - 1
         , genPwIn = (input1, input2)
-        , genPwStateTransformation = \ s _ _ _ -> Just (not s)
+        , genPwStateTransformation = \ _ s _ _ _ -> return . Just $ not s
         , genPwInitialState = False
         , genPwOutEmpty = e
         , genPwOutCons = cons
-        , genPwOutCond = const True
+        , genPwOutCond = \ _ _ -> True
         }
 
 alternatingConfigThreeState
@@ -169,22 +174,23 @@ alternatingConfigThreeState (in1, len1) (in2, len2) (<>) elem' (!) e cons =
             Just c
               | c         -> len1 - 1
               | otherwise -> len2 - 1 , genPwIn = (in1, in2)
-        , genPwStateTransformation = \ s (t1, t2) (x, _) _ -> case s of
-            Nothing -> case (x `elem'` t1, x `elem'` t2) of
-                (True, False) -> Just (Just False)
-                (False, True) -> Just (Just True)
-                _ -> Just Nothing
-            Just b -> Just (Just (not b))
+        , genPwStateTransformation = \ _ s (t1, t2) (x, _) _ ->
+            return $ case s of
+                Nothing -> case (x `elem'` t1, x `elem'` t2) of
+                    (True, False) -> Just (Just False)
+                    (False, True) -> Just (Just True)
+                    _ -> Just Nothing
+                Just b -> Just (Just (not b))
         , genPwInitialState = Nothing
         , genPwOutEmpty = e
         , genPwOutCons = cons
-        , genPwOutCond = const True
+        , genPwOutCond = \ _ _ -> True
         }
 
 -- | Generate random password based on algorithm described in configuration
 -- and using specified random number generator.
 genPassword
-    :: Monad m
+    :: (Applicative m, Functor m, Monad m, Show a)
     => GenPasswordConfig s t u a
     -- ^ Configuration that describes details of password generation algorithm.
     -> (Word32 -> m Word32)
@@ -196,9 +202,9 @@ genPassword
 genPassword cfg genRand pwLength
   | pwLength == 0 = return empty
   | otherwise     = do
-    pw <- genPassword' (state, empty, 0)
-    case pw of
-        Just pw' | pwCorrect pw' -> return pw'
+    r <- genPassword' (state, empty, 0)
+    case r of
+        Just (s, pw) | pwCorrect s pw -> return pw
         _ -> genPassword cfg genRand pwLength
             -- Generated password was invalid, start all over again.
   where
@@ -208,18 +214,18 @@ genPassword cfg genRand pwLength
     input = genPwIn cfg
     pwCorrect = genPwOutCond cfg
     state = genPwInitialState cfg
-    stateTrans = genPwStateTransformation cfg
+    stateTrans = genPwStateTransformation cfg genRand
     max' = flip (genPwInMaxIndex cfg) input
 
     genPassword' (s, xs, len) = do
-        y@(x, n) <- ((input !) . (,) s) `liftM` genRand (max' s)
-        case stateTrans s input y (xs, len) of
+        y@(x, n) <- ((input !) . (,) s) <$> genRand (max' s)
+        maybeNewState <- stateTrans s input y (xs, len)
+        case maybeNewState of
             Nothing -> return Nothing
             Just s'
-              | len + n == pwLength -> return . Just $ x `cons` xs
-              | otherwise -> genPassword' args
-              where
-                args = if len + n > pwLength
+              | len + n == pwLength -> return $ Just (s', x `cons` xs)
+              | otherwise -> genPassword'
+                $ if len + n > pwLength
                     then (s, xs, len)
                         -- Value was too large, discard it and get new one.
                     else (s', x `cons` xs, len + n)
