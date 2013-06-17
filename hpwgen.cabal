@@ -62,6 +62,7 @@ executable hpwgen
       Text.Pwgen
     , Text.Pwgen.Common
     , Text.Pwgen.FromAscii
+    , Text.Pwgen.FromAscii.Class
     , Text.Pwgen.FromAscii.ByteString
   if flag(with-text)
     other-modules:    Text.Pwgen.FromAscii.Text
