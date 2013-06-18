@@ -75,10 +75,7 @@ import Text.Pwgen.FromAscii
 
 -- | Helper function that constructs generator from list of ASCII values.
 construct :: FromAscii a => [Word8] -> (a -> t -> t) -> t -> t
-construct ws cons = construct' ws
-  where
-    construct' []     = id
-    construct' (x:xs) = cons (fromAscii x) . construct' xs
+construct ws cons = foldl (\ f -> (f .) . cons . fromAscii) id ws
 {-# INLINE construct #-}
 
 -- | Numbers @\'0\', \'1\', ... \'9\'@.

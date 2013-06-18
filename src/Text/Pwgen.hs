@@ -118,7 +118,7 @@ mkConfig initialState (input, inLen) (!) e cons = GenPasswordConfig
     }
 
 simpleConfig
-    :: ([Char], Word32)
+    :: (String, Word32)
     -- ^ Input alphabet and its length.
     -> GenPasswordConfig () String String Char
 simpleConfig input = mkConfig
@@ -139,12 +139,8 @@ alternatingConfig
     -> GenPasswordConfig Bool (t, t) u a
 alternatingConfig (input1, len1) (input2, len2) (!) e cons =
     GenPasswordConfig
-        { genPwInIndex = \ (t1, t2) (s, n) -> (! n) $ case s of
-            False -> t1
-            True -> t2
-        , genPwInMaxIndex = \ s _ -> case s of
-            False -> len1 - 1
-            True -> len2 - 1
+        { genPwInIndex = \ (t1, t2) (s, n) -> (! n) $ if s then t2 else t1
+        , genPwInMaxIndex = \ s _ -> (if s then len2 else len1) - 1
         , genPwIn = (input1, input2)
         , genPwStateTransformation = \ _ s _ _ _ -> return . Just $ not s
         , genPwInitialState = False
