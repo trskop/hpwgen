@@ -11,7 +11,8 @@ Command line utility
 
 Usage:
 
-    hpwgen [PASSWORD_LENGTH [NUMBER_OF_PASSWORDS]]
+    hpwgen [OPTIONS] [PASSWORD_LENGTH [NUMBER_OF_PASSWORDS]]
+    hpwgen {-h|--help|-V|--version|--numeric-version}
 
 If `PASSWORD_LENGTH` is not specified it generates passwords with 8 characters.
 By default it prints as many passwords as it can fit in to 20 lines of output.

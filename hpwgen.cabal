@@ -1,5 +1,5 @@
 name:           hpwgen
-version:        0.3.0.0
+version:        0.4.0.0
 synopsis:       Library and command line tool for generating random passwords.
 description:
   Library and command line tool for generating random passwords. Library API is
@@ -39,9 +39,13 @@ library
     , Text.Pwgen.Common
     , Text.Pwgen.FromAscii
     , Text.Pwgen.FromAscii.Class
+    , Text.Pwgen.Pronounceable
   -- other-modules:
   build-depends:
       base == 4.*
+    , array
+    , data-default-class == 0.0.*
+    , bytestring
     , not-found >= 0.6
   if flag(with-bytestring)
     exposed-modules:    Text.Pwgen.FromAscii.ByteString
@@ -59,20 +63,29 @@ executable hpwgen
   hs-source-dirs:       src
   main-is:              main.hs
   other-modules:
-      Text.Pwgen
+      Main.Application
+    , Main.MiniLens
+    , Text.Pwgen
     , Text.Pwgen.Common
     , Text.Pwgen.FromAscii
-    , Text.Pwgen.FromAscii.Class
     , Text.Pwgen.FromAscii.ByteString
+    , Text.Pwgen.FromAscii.Class
+    , Text.Pwgen.Pronounceable
   if flag(with-text)
-    other-modules:    Text.Pwgen.FromAscii.Text
+    other-modules:      Text.Pwgen.FromAscii.Text
     build-depends:      text
   build-depends:
       base == 4.*
 
+    , application-common >= 0.1.2.0 && < 0.2
+    , array
     , bytestring
+    , data-default-class == 0.0.*
+    , data-default-instances-base ==0.0.*
     , MonadRandom == 0.1.*
     , not-found >= 0.6
+    , semigroups
+    , text
     , terminal-size == 0.2.*
   ghc-options:          -Wall
   if impl(ghc >= 6.8)
