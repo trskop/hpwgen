@@ -23,7 +23,7 @@ import Data.Version (Version)
 import Data.Word (Word32)
 import System.Console.GetOpt -- (OptDescr(..), ArgDescr(NoArg), getOpt)
 import System.Exit (exitFailure)
-import System.IO (Handle, hPutStrLn, stderr, stdout)
+import System.IO (Handle, stderr, stdout)
 
 import Control.Monad.Random (evalRandIO, getRandomR)
 import Data.ByteString (ByteString)
@@ -41,7 +41,7 @@ import Main.ApplicationMode
     , updateConfiguration
     )
 import Main.ApplicationMode.SimpleAction (SimpleAction(..))
-import Main.Common (printHelp, printVersion)
+import Main.Common (Parameters(..), printHelp, printVersion, printOptErrors)
 import Main.MiniLens (E, L, get, mkL, set)
 import qualified Text.Pwgen.Pronounceable as Pronounceable (genPwConfigBS)
 import Text.Pwgen (genPassword)
@@ -146,14 +146,17 @@ setCfgIncludeUppers b c = c{cfgIncludeUppers = b}
 includeUppersL :: L Config Bool
 includeUppersL = mkL cfgIncludeUppers setCfgIncludeUppers
 
-usage :: [String]
-usage =
-    [ "[OPTIONS] [PASSWORD_LENGTH [NUMBER_OF_PASSWORDS]]"
-    , "{-h|--help|-V|--version|--numeric-version}"
-    ]
-
-footer :: [String]
-footer = [""]
+params :: Parameters Config
+params = def
+    { paramOutputHandle = get outHandleL
+    , paramProgName = get progNameL
+    , paramCommand = get progNameL
+    , paramVersion = cfgVersion
+    , paramUsage = const
+        [ "[OPTIONS] [PASSWORD_LENGTH [NUMBER_OF_PASSWORDS]]"
+        , "{-h|--help|-V|--version|--numeric-version}"
+        ]
+    }
 
 options :: [OptDescr (Endo HpwgenMode)]
 options =
@@ -255,25 +258,19 @@ numberOfColumnsAndPasswords cfg s = case (cfgPrintInColumns cfg, s) of
       where
         pwlen = fromIntegral $ get passwordLengthL cfg
 
-printOptErrors :: Handle -> [String] -> IO ()
-printOptErrors h errs = hPutStrLn h . unlines
-    $ "Error(s) occurred while processing command line options:"
-    : map ("  " ++) errs
-
 runApp :: SimpleAction -> Config -> IO ()
 runApp a cfg = case a of
     PrintVersion numericOnly -> printVersion' numericOnly
     PrintHelp -> printHelp'
-    OptErrors errs -> printOptErrors handle errs >> printHelp' >> exitFailure
+    OptErrors errs -> printOptErrors' errs >> printHelp' >> exitFailure
     Action -> generatePasswords cfg
   where
-    handle = get outHandleL cfg
-    progName = get progNameL cfg
-    ver = cfgVersion cfg
-    printVersion' = printVersion progName [] ver handle
+    withParams f = f params cfg
+    printVersion' = withParams printVersion
+    printOptErrors' = withParams printOptErrors
     printHelp' = do
         str <- renderUsageInfo "" options
-        printHelp progName ver handle usage (const str) footer
+        withParams printHelp (\ _ _ -> unlines [str])
 
 generatePasswords :: Config -> IO ()
 generatePasswords cfg = do
