@@ -20,11 +20,15 @@ import Data.Char (isDigit)
 import Data.Maybe (fromMaybe)
 import Data.Version (Version)
 import Data.Word (Word32)
-import System.Console.GetOpt -- (OptDescr(..), ArgDescr(NoArg), getOpt)
+import System.Console.GetOpt
+    ( OptDescr(Option)
+    , ArgDescr(NoArg)
+    , ArgOrder(Permute)
+    , getOpt
+    )
 import System.Exit (exitFailure)
 import System.IO (Handle, stderr, stdout)
 
-import Control.Monad.Random (evalRandIO, getRandomR)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS (hPutStrLn, unwords)
 import Data.Default.Class (Default(def))
@@ -46,6 +50,7 @@ import Main.ApplicationMode.SimpleAction (SimpleAction(..))
 import qualified Main.ApplicationMode.SimpleAction as SimpleAction (optErrors)
 import Main.Common (Parameters(..), printHelp, printVersion, printOptErrors)
 import Main.MiniLens (E, L, get, mkL, set)
+import Main.Random (withGenRand)
 import qualified Text.Pwgen.Pronounceable as Pronounceable (genPwConfigBS)
 import Text.Pwgen (genPassword)
 
@@ -278,10 +283,9 @@ generatePasswords :: Config -> IO ()
 generatePasswords cfg = do
     (cols, pwNum) <- numberOfColumnsAndPasswords cfg . fmap width
         <$> Terminal.size
-    evalRandIO (replicateM pwNum $ genPassword genPwCfg genRand pwLen)
-        >>= printPasswords handle cols
+    printPasswords handle cols =<< withGenRand (\ genRandom ->
+        replicateM pwNum $ genPassword genPwCfg genRandom pwLen)
   where
-    genRand = getRandomR . (,) 0
     pwLen = get passwordLengthL cfg
     handle = get outHandleL cfg
 

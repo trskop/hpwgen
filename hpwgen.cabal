@@ -65,6 +65,7 @@ executable hpwgen
   other-modules:
       Main.Application
     , Main.MiniLens
+    , Main.Random
     , Text.Pwgen
     , Text.Pwgen.Common
     , Text.Pwgen.FromAscii
