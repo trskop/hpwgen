@@ -110,53 +110,33 @@ instance Default Config where
         }
 
 outHandleL :: L Config Handle
-outHandleL = mkL cfgOutHandle setCfgOutHandle
-
-setCfgOutHandle :: Handle -> E Config
-setCfgOutHandle h c = c{cfgOutHandle = h}
+outHandleL = mkL cfgOutHandle $ \ h c -> c{cfgOutHandle = h}
 
 progNameL :: L Config String
-progNameL = mkL cfgProgName setCfgProgName
-
-setCfgProgName :: String -> E Config
-setCfgProgName pn c = c{cfgProgName = pn}
-
-setCfgGeneratePronounceable :: Bool -> E Config
-setCfgGeneratePronounceable b c = c{cfgGeneratePronounceable = b}
+progNameL = mkL cfgProgName $ \ pn c -> c{cfgProgName = pn}
 
 generatePronounceableL :: L Config Bool
 generatePronounceableL =
-    mkL cfgGeneratePronounceable setCfgGeneratePronounceable
-
-setCfgPasswordLength :: Word32 -> E Config
-setCfgPasswordLength n c = c{cfgPasswordLength = n}
-
-setCfgNumberOfPasswords :: Maybe Int -> E Config
-setCfgNumberOfPasswords n c = c{cfgNumberOfPasswords = n}
+    mkL cfgGeneratePronounceable $ \ b c -> c{cfgGeneratePronounceable = b}
 
 passwordLengthL :: L Config Word32
-passwordLengthL = mkL cfgPasswordLength setCfgPasswordLength
+passwordLengthL = mkL cfgPasswordLength $ \ n c -> c{cfgPasswordLength = n}
 
 numberOfPasswordsL :: L Config (Maybe Int)
-numberOfPasswordsL = mkL cfgNumberOfPasswords setCfgNumberOfPasswords
-
-setCfgIncludeNumbers :: Bool -> E Config
-setCfgIncludeNumbers b c = c{cfgIncludeNumbers = b}
+numberOfPasswordsL =
+    mkL cfgNumberOfPasswords $ \ n c -> c{cfgNumberOfPasswords = n}
 
 includeNumbersL :: L Config Bool
-includeNumbersL = mkL cfgIncludeNumbers setCfgIncludeNumbers
-
-setCfgIncludeSymbols :: Bool -> E Config
-setCfgIncludeSymbols b c = c{cfgIncludeSymbols = b}
+includeNumbersL = mkL cfgIncludeNumbers $ \ b c -> c{cfgIncludeNumbers = b}
 
 includeSymbolsL :: L Config Bool
-includeSymbolsL = mkL cfgIncludeSymbols setCfgIncludeSymbols
-
-setCfgIncludeUppers :: Bool -> E Config
-setCfgIncludeUppers b c = c{cfgIncludeUppers = b}
+includeSymbolsL = mkL cfgIncludeSymbols $ \ b c -> c{cfgIncludeSymbols = b}
 
 includeUppersL :: L Config Bool
-includeUppersL = mkL cfgIncludeUppers setCfgIncludeUppers
+includeUppersL = mkL cfgIncludeUppers $ \ b c -> c{cfgIncludeUppers = b}
+
+printInColumnsL :: L Config (Maybe Bool)
+printInColumnsL = mkL cfgPrintInColumns $ \ b c -> c{cfgPrintInColumns = b}
 
 params :: Parameters Config
 params = def
@@ -176,19 +156,51 @@ options =
     [ Option "s" ["secure"]
         (NoArg . updateConfiguration $ set generatePronounceableL False)
         "Generate completely random passwords."
-    , Option "h" ["help"]
 -}
-    [ Option "h" ["help"]
+    [ Option "cu" ["capitalize", "upper"]
+        (NoArg . updateConfiguration $ set includeUppersL True)
+        $ defaultMark (get includeUppersL)
+            "Upper case letters will be included in passwords."
+    , Option "CU" ["no-capitalize", "no-upper"]
+        (NoArg . updateConfiguration $ set includeUppersL False)
+        $ defaultMark (not . get includeUppersL)
+            "Upper case letters won't be included in passwords."
+    , Option "n"  ["numerals", "numbers"]
+        (NoArg . updateConfiguration $ set includeNumbersL True)
+        $ defaultMark (get includeNumbersL)
+            "Numbers will be included in passwords."
+    , Option "N0" [ "no-numerals", "no-numbers"]
+        (NoArg . updateConfiguration $ set includeNumbersL False)
+        $ defaultMark (not . get includeNumbersL)
+            "Numbers won't be included in passwords."
+    , Option "y"  [ "symbols"]
+        (NoArg . updateConfiguration $ set includeSymbolsL True)
+        $ defaultMark (get includeSymbolsL)
+            "Special symbols will be included in passwords."
+    , Option "Y"  [ "no-symbols"]
+        (NoArg . updateConfiguration $ set includeSymbolsL False)
+        $ defaultMark (not . get includeSymbolsL)
+            "Special symbols won't be included in passwords."
+    , Option "1"  ["one-column"]
+        (NoArg . updateConfiguration . set printInColumnsL $ Just False)
+        "Passwords will be printed in only one column. If number of passwords\
+        \ is not specified, then only one password will be printed."
+    , Option "h"  ["help"]
         (NoArg $ changeAction PrintHelp)
         "Print this help and exit."
-    , Option "V" ["version"]
+    , Option "V"  ["version"]
         (NoArg . changeAction $ PrintVersion False)
         "Print version number and exit."
-    , Option ""  ["numeric-version"]
+    , Option ""   ["numeric-version"]
         (NoArg . changeAction $ PrintVersion True)
         "Print version number (numeric form only) and exit. Useful for batch\
         \ processing."
     ]
+  where
+    defaultMark :: (Config -> Bool) -> String -> String
+    defaultMark p
+      | p def     = (++ " (default)")
+      | otherwise = id
 
 processOptions :: String -> [String] -> Endo HpwgenMode
 processOptions progName = mconcat . processOptions' . getOpt Permute options
@@ -197,7 +209,7 @@ processOptions progName = mconcat . processOptions' . getOpt Permute options
         optErrors errs
         : processNonOpts nonOpts
         : updateConfiguration (set progNameL progName)
-        : endos
+        : reverse endos
 
     setNum :: Read a => (a -> E Config) -> String -> String -> Endo HpwgenMode
     setNum setter what s
@@ -239,7 +251,7 @@ numberOfColumnsAndPasswords
     -> (Int, Int)
     -- ^ Number of columns to print passwords in and number of passowrds that
     -- will be generated.
-numberOfColumnsAndPasswords cfg s = case (cfgPrintInColumns cfg, s) of
+numberOfColumnsAndPasswords cfg s = case (get printInColumnsL cfg, s) of
     (Nothing, Nothing) -> (1, fromMaybe 1 pwNum)
         -- In auto mode and output is not a terminal.
     (Just False, _) -> (1, fromMaybe 1 pwNum)
