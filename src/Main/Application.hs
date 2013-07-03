@@ -61,9 +61,15 @@ import Paths_hpwgen (version)
 defaultPwlen :: Word32
 defaultPwlen = 8
 
--- | Default number of lines.
+-- | Default number of lines, this is used when printing passwords in columns,
+-- but number of passwords wasn't specified.
 defaultNumberOfLines :: Int
 defaultNumberOfLines = 20
+
+-- | Line length used when printing in columns, but to a handle that isn't a
+-- terminal.
+defaultLineLength :: Int
+defaultLineLength = 80
 
 type HpwgenMode = SimpleMode SimpleAction Config
 
@@ -239,14 +245,14 @@ numberOfColumnsAndPasswords cfg s = case (cfgPrintInColumns cfg, s) of
     (Just False, _) -> (1, fromMaybe 1 pwNum)
         -- Forcing one column mode, then by default just one password shouls be
         -- printed.
-    (Just True, Nothing) ->  let cols = numberOfColumns 80
+    (Just True, Nothing) ->  let cols = numberOfColumns defaultLineLength
         in (cols, fromMaybe (cols * defaultNumberOfLines) pwNum)
         -- Forced to print in columns, but output is not a terminal, assuming
-        -- 80 character width.
+        -- defaultLineLength character width.
     (_, Just n) -> let cols = numberOfColumns n
         in (cols, fromMaybe (cols * defaultNumberOfLines) pwNum)
         -- Either in auto mode or forced to print in columns, output is a
-        -- terminal. Default number of passwords is
+        -- terminal.
   where
     pwNum = fromIntegral <$> get numberOfPasswordsL cfg
 
