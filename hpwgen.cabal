@@ -1,5 +1,5 @@
 name:           hpwgen
-version:        0.4.4.0
+version:        0.4.5.0
 synopsis:       Library and command line tool for generating random passwords.
 description:
   Library and command line tool for generating random passwords. Library API is
