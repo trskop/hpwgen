@@ -32,6 +32,10 @@ flag with-text
   description: Compile with Text support.
   default: True
 
+flag with-mwc-random
+  description: Uset monadcryptorandom instead of MonadRandom.
+  default: True
+
 library
   hs-source-dirs:       src
   exposed-modules:
@@ -83,11 +87,18 @@ executable hpwgen
     , bytestring
     , data-default-class == 0.0.*
     , data-default-instances-base == 0.0.*
-    , MonadRandom == 0.1.*
     , not-found >= 0.6
     , semigroups
     , text
     , terminal-size == 0.2.*
+
+  if flag(with-mwc-random)
+    build-depends:      mwc-random >= 0.11 && < 0.13
+    cpp-options:        -DWITH_MWC_RANDOM
+  else
+    build-depends:      MonadRandom == 0.1.*
+    cpp-options:        -DWITH_MONADRANDOM
+
   ghc-options:          -Wall
   if impl(ghc >= 6.8)
     ghc-options:        -fwarn-tabs
