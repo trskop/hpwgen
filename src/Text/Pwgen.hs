@@ -32,6 +32,9 @@ module Text.Pwgen
     -- * Input symbols/alphabet
 
     -- ** FromAscii class
+    --
+    -- | Abstraction for constructing characters/strings without tying your
+    -- self to particular character/string implementation.
     , FromAscii(..)
 
     -- ** Commonly used generators
@@ -77,7 +80,7 @@ data GenPasswordConfig s t u a = GenPasswordConfig
     -- ^ Cons function that puts new randomly selected value in to output.
     , genPwOutCond :: s -> u -> Bool
     -- ^ Output condition, if 'False' then whole generated password is
-    -- discarded and new value is generated. If set to @'const' 'False'@
+    -- discarded and new value is generated. If set to @\\ _ _ -> 'False'@
     -- then 'genPassword' ends up in infinite loop.
     }
 
@@ -117,6 +120,7 @@ mkConfig initialState (input, inLen) (!) e cons = GenPasswordConfig
     , genPwOutCond = \ _ _ -> True -- Any sequence is accepted.
     }
 
+-- | Construct simple 'String' based configuration.
 simpleConfig
     :: (String, Word32)
     -- ^ Input alphabet and its length.
@@ -130,6 +134,10 @@ simpleConfig input = mkConfig
   where
     l ! (_, n) = (l !! fromIntegral n, 1)
 
+-- | Simplified construction of configuration for situations where there are
+-- two input alphabets and algoritm is alternating between these. In other
+-- words it uses boolean state that that starts with the first list, then
+-- switches to the other and back again in the next round.
 alternatingConfig
     :: (t, Word32)
     -> (t, Word32)
@@ -149,6 +157,12 @@ alternatingConfig (input1, len1) (input2, len2) (!) e cons =
         , genPwOutCond = \ _ _ -> True
         }
 
+-- | Similar to 'alternatingConfig' except that it uses @'Maybe' 'Bool'@ as a
+-- state and 'Nothing' is used its initial value. When state is 'Nothing', then
+-- element is selected from both input alphabets. If element from first
+-- alphabet was selected then state is changed so the second one would be used
+-- in the next round. Analogically for the situation if the first element would
+-- be from the second alphabet. State doesn't return back to 'Nothing'.
 alternatingConfigThreeState
     :: (t, Word32)
     -> (t, Word32)
