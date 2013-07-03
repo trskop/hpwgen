@@ -31,11 +31,14 @@ import Data.Default.Class (Default(def))
 import Data.Monoid.Endo hiding ((<>))
 import Data.Semigroup (Semigroup((<>)))
 import System.Console.Terminal.Size as Terminal (Window(..), size)
-import System.Console.GetOpt.UsageInfo (renderUsageInfo)
+import System.Console.GetOpt.UsageInfo
+    ( UsageInfoConfig(outputHandle)
+    , renderUsageInfo
+    )
 
 import Main.ApplicationMode
     ( ApplicationMode(..)
-    , AppMode(..)
+    , SimpleMode(..)
     , changeAction
     , updateConfiguration
     )
@@ -56,9 +59,9 @@ defaultPwlen = 8
 defaultNumberOfLines :: Int
 defaultNumberOfLines = 20
 
-type HpwgenMode = AppMode SimpleAction Config
+type HpwgenMode = SimpleMode SimpleAction Config
 
-instance ApplicationMode AppMode SimpleAction Config where
+instance ApplicationMode SimpleMode SimpleAction Config where
     optErrors [] = mempty
     optErrors msgs = changeAction (OptErrors $ map (takeWhile notEol) msgs)
         `mappend` updateConfiguration (set outHandleL stderr)
@@ -268,8 +271,9 @@ runApp a cfg = case a of
     printVersion' = withParams printVersion
     printOptErrors' = withParams printOptErrors
     printHelp' = do
-        str <- renderUsageInfo "" options
+        str <- renderUsageInfo usageInfoCfg "" options
         withParams printHelp (\ _ _ -> unlines [str])
+      where usageInfoCfg = def{outputHandle = get outHandleL cfg}
 
 generatePasswords :: Config -> IO ()
 generatePasswords cfg = do

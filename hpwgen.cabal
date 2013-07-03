@@ -77,11 +77,11 @@ executable hpwgen
   build-depends:
       base == 4.*
 
-    , application-common >= 0.2.0 && < 0.3
+    , application-common >= 0.3 && < 0.4
     , array
     , bytestring
     , data-default-class == 0.0.*
-    , data-default-instances-base ==0.0.*
+    , data-default-instances-base == 0.0.*
     , MonadRandom == 0.1.*
     , not-found >= 0.6
     , semigroups
