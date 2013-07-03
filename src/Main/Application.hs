@@ -43,6 +43,7 @@ import Main.ApplicationMode
     , updateConfiguration
     )
 import Main.ApplicationMode.SimpleAction (SimpleAction(..))
+import qualified Main.ApplicationMode.SimpleAction as SimpleAction (optErrors)
 import Main.Common (Parameters(..), printHelp, printVersion, printOptErrors)
 import Main.MiniLens (E, L, get, mkL, set)
 import qualified Text.Pwgen.Pronounceable as Pronounceable (genPwConfigBS)
@@ -62,12 +63,10 @@ defaultNumberOfLines = 20
 type HpwgenMode = SimpleMode SimpleAction Config
 
 instance ApplicationMode SimpleMode SimpleAction Config where
-    optErrors [] = mempty
-    optErrors msgs = changeAction (OptErrors $ map (takeWhile notEol) msgs)
-        `mappend` updateConfiguration (set outHandleL stderr)
-      where
-        notEol ch = ch /= '\r' && ch /= '\n'
-
+    optErrors msgs = case SimpleAction.optErrors msgs of
+        Nothing -> mempty
+        Just a -> changeAction a
+            `mappend` updateConfiguration (set outHandleL stderr)
 
 data Config = Config
     { cfgProgName :: String
@@ -173,10 +172,10 @@ options =
         "Print this help and exit."
     , Option "V" ["version"]
         (NoArg . changeAction $ PrintVersion False)
-        "Print version number and exti."
+        "Print version number and exit."
     , Option ""  ["numeric-version"]
         (NoArg . changeAction $ PrintVersion True)
-        "Print version number (numeric form only) and exti. Useful for batch\
+        "Print version number (numeric form only) and exit. Useful for batch\
         \ processing."
     ]
 
